@@ -1,0 +1,39 @@
+-- PostgreSQL Schema for Roulette Roguelike Game (RQ08)
+
+CREATE TABLE IF NOT EXISTS players (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS game_sessions (
+    id SERIAL PRIMARY KEY,
+    player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    current_balance BIGINT NOT NULL,
+    current_quota BIGINT NOT NULL,
+    current_round INT NOT NULL DEFAULT 1,
+    spins_left INT NOT NULL DEFAULT 6,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, WON, GAME_OVER
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS game_perks (
+    id SERIAL PRIMARY KEY,
+    session_id INT NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
+    perk_type VARCHAR(30) NOT NULL, -- MONEY_BOOST, CLAIRVOYANCE, LOSS_MITIGATION
+    quantity INT NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS bets_history (
+    id SERIAL PRIMARY KEY,
+    session_id INT NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
+    round_number INT NOT NULL,
+    bet_type VARCHAR(30) NOT NULL,
+    target_value VARCHAR(50) NOT NULL,
+    amount BIGINT NOT NULL,
+    payout BIGINT NOT NULL,
+    winning_pocket VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
