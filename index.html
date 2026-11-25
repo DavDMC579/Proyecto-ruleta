@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruleta Casino Roguelike - Cuotas Progresivas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="arcade-container">
+        <!-- Arcade Header -->
+        <header class="arcade-header">
+            <div class="game-title">
+                🎰 RULETA: RETO DE CUOTAS
+            </div>
+            <div class="header-controls">
+                <button id="btnRules" class="btn-icon" title="Ver Reglas">📖 REGLAS</button>
+                <button id="btnMute" class="btn-icon" title="Silenciar / Activar Sonido">🔊</button>
+            </div>
+        </header>
+
+        <!-- HUD Statistics Panel -->
+        <section class="hud-panel">
+            <div class="hud-card">
+                <span class="hud-label">Saldo Jugador</span>
+                <span id="hudBalance" class="hud-value success">$100</span>
+            </div>
+            <div class="hud-card">
+                <span class="hud-label">Cuota Objetivo</span>
+                <span id="hudQuota" class="hud-value gold">$1,000</span>
+            </div>
+            <div class="hud-card">
+                <span class="hud-label">Tiradas</span>
+                <span id="hudSpins" class="hud-value">6 / 6</span>
+            </div>
+            <div class="hud-card">
+                <span class="hud-label">Ronda / Progreso</span>
+                <span id="hudRound" class="hud-value">Nivel 1</span>
+            </div>
+        </section>
+
+        <!-- Progressive Quota Progress Bar -->
+        <div class="quota-bar-container">
+            <div class="quota-meta-text">
+                <span>Progreso hacia la Cuota</span>
+                <span>Apuesta en mesa: <strong id="hudTotalBet" style="color:var(--gold);">$0</strong></span>
+            </div>
+            <div class="progress-track">
+                <div id="quotaProgressFill" class="progress-fill" style="width: 10%;"></div>
+            </div>
+        </div>
+
+        <!-- Oracle / Clairvoyance Banner (Hidden until power is active) -->
+        <div id="oracleBanner" class="oracle-banner">
+            🔮 <strong>VISIÓN DEL DESTINO:</strong> El próximo número será el: 
+            <span id="oracleNumber" class="oracle-number">--</span>
+        </div>
+
+        <!-- Turn Outcome Flash Banner -->
+        <div id="turnResultBanner" style="display:none; text-align:center; background:#211409; border:2px solid var(--gold); padding:6px; border-radius:4px; font-size:8px; color:#fff;"></div>
+
+        <!-- Felt Casino Table Section -->
+        <main class="felt-table">
+            <!-- Roulette Wheel Canvas -->
+            <div class="wheel-area">
+                <canvas id="rouletteCanvas" width="408" height="408"></canvas>
+                <div id="lastResultBadge" class="last-result-badge">
+                    <span>Último:</span>
+                    <span id="lastResultValue" class="last-result-value" style="background:var(--green);">0 GREEN</span>
+                </div>
+            </div>
+
+            <!-- Betting Board -->
+            <div class="betting-board-container">
+                <div id="rouletteBoard" class="roulette-table-grid">
+                    <!-- Dynamically populated via game.js -->
+                </div>
+            </div>
+
+            <!-- Chip Selector Tray -->
+            <div class="chip-tray" id="chipTray">
+                <!-- Dynamically populated via game.js -->
+            </div>
+
+            <!-- Action Controls (Spin, Clear, Double, Repeat) -->
+            <div class="controls-bar">
+                <button id="btnSpin" class="btn-arcade btn-spin">🎲 GIRAR RULETA</button>
+                <button id="btnClear" class="btn-arcade">🧹 LIMPIAR</button>
+                <button id="btnDouble" class="btn-arcade">✖2 DUPLICAR</button>
+                <button id="btnRepeat" class="btn-arcade">🔁 REPETIR</button>
+            </div>
+        </main>
+
+        <!-- Roguelike Power-Ups Section -->
+        <section class="powers-tray">
+            <div class="powers-header">
+                <span>⚡ PODERES OBTENIDOS (Actívalos antes de girar):</span>
+                <span>1 Poder por turno</span>
+            </div>
+            <div class="powers-list">
+                <!-- Power 1: Double Win -->
+                <button id="btnPower_double_win" class="power-slot-btn" title="Duplica tus ganancias netas si ganas la tirada">
+                    <span class="power-icon">🌟</span>
+                    <span class="power-title">GANANCIA x2</span>
+                    <span id="countPower_double_win" class="power-badge-count">0</span>
+                </button>
+
+                <!-- Power 2: Reveal Next Number -->
+                <button id="btnPower_reveal_number" class="power-slot-btn clairvoyance" title="Muestra qué número saldrá exactamente">
+                    <span class="power-icon">🔮</span>
+                    <span class="power-title">OJO DEL DESTINO</span>
+                    <span id="countPower_reveal_number" class="power-badge-count">0</span>
+                </button>
+
+                <!-- Power 3: Loss Shield -->
+                <button id="btnPower_loss_shield" class="power-slot-btn shield" title="Si pierdes en este turno, solo pierdes el 50%">
+                    <span class="power-icon">🛡️</span>
+                    <span class="power-title">ESCUDO 50%</span>
+                    <span id="countPower_loss_shield" class="power-badge-count">0</span>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal 1: Power Choice Upon Quota Victory -->
+    <div id="victoryModal" class="modal-overlay">
+        <div class="modal-box">
+            <h2 id="victoryTitle" class="modal-title">¡CUOTA SUPERADA!</h2>
+            <p id="victoryDesc" class="modal-subtitle">
+                Has alcanzado la meta exigida. ¡Selecciona 1 de los 3 poderes sagrados para tu inventario!
+            </p>
+            <div class="power-cards-container">
+                <!-- Card 1 -->
+                <div id="cardPower_double_win" class="power-card">
+                    <div class="power-card-icon">🌟</div>
+                    <div class="power-card-title">Ganancias Dobles</div>
+                    <div class="power-card-desc">
+                        Duplica x2 todas las ganancias netas obtenidas en el turno que lo actives.
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div id="cardPower_reveal_number" class="power-card">
+                    <div class="power-card-icon">🔮</div>
+                    <div class="power-card-title">Ojo del Destino</div>
+                    <div class="power-card-desc">
+                        Revela por anticipado qué número exacto saldrá en la siguiente tirada.
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div id="cardPower_loss_shield" class="power-card">
+                    <div class="power-card-icon">🛡️</div>
+                    <div class="power-card-title">Escudo de Pérdidas</div>
+                    <div class="power-card-desc">
+                        Si pierdes tu apuesta en el turno, solo pierdes el 50% (se te devuelve la mitad).
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Game Over -->
+    <div id="gameOverModal" class="modal-overlay">
+        <div class="modal-box">
+            <h2 class="modal-title" style="color:#ff5252;">💀 GAME OVER</h2>
+            <p id="gameOverDesc" class="modal-subtitle">
+                No lograste alcanzar la cuota exigida por la casa.
+            </p>
+            <button id="btnRestart" class="modal-btn">🔄 INTENTAR DE NUEVO</button>
+        </div>
+    </div>
+
+    <!-- Modal 3: Rules & Instructions -->
+    <div id="rulesModal" class="modal-overlay">
+        <div class="modal-box" style="text-align:left;">
+            <h2 class="modal-title" style="text-align:center;">📖 CÓMO JUGAR</h2>
+            <div style="font-size:7.5px; line-height:1.7; color:#ddd; display:flex; flex-direction:column; gap:8px;">
+                <p>💰 <strong>OBJETIVO:</strong> Inicias con $100. Debes alcanzar la cuota exigida por la casa (inicia en $1,000) antes de quedarte sin tiradas o en bancarrota.</p>
+                <p>📈 <strong>CUOTAS PROGRESIVAS:</strong> Al superar la cuota, la siguiente cuota escala según tu saldo (ej. si llegas a $2,000, la próxima cuota será $6,000).</p>
+                <p>⚡ <strong>PODERES SAGRADOS:</strong> Al superar cada cuota podrás elegir 1 de 3 poderes:</p>
+                <ul style="margin-left:16px;">
+                    <li>🌟 <strong>Ganancias Dobles:</strong> Duplica las ganancias de ese turno (x2 Payout).</li>
+                    <li>🔮 <strong>Ojo del Destino:</strong> Revela con exactitud el próximo número ganador.</li>
+                    <li>🛡️ <strong>Escudo 50%:</strong> Si pierdes, te devuelve la mitad de lo apostado.</li>
+                </ul>
+                <p>🎲 <strong>APUESTAS:</strong> Haz clic en cualquier casilla para colocar fichas. Clic derecho o Shift+Clic para retirar fichas.</p>
+            </div>
+            <button id="btnCloseRules" class="modal-btn">¡ENTENDIDO!</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="audio.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
